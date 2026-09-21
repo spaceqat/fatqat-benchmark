@@ -1,0 +1,253 @@
+# Materialized, integrity-checked OpenQASM performance corpus.
+# These inputs are generated offline; benchmark execution never downloads or regenerates them.
+schema_version = 1
+
+[[fixture]]
+id = "import_layered_12q_10l_qasm2"
+path = "qasm2/import_layered_12q_10l.qasm"
+format = "openqasm2"
+profiles = ["quick", "full"]
+qubits = 12
+tags = ["import", "layered"]
+sha256 = "ce53ed487c8cf52e8939eba3d807b675fd85f061cf0c9ad7872972569e2d8025"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 12, layers = 10 }
+equivalent_native_case = "simulator.state.sv_numba_12q_10l"
+
+[[fixture]]
+id = "import_layered_12q_10l_qasm3"
+path = "qasm3/import_layered_12q_10l.qasm"
+format = "openqasm3"
+profiles = ["quick", "full"]
+qubits = 12
+tags = ["import", "layered"]
+sha256 = "d07f3bcfd8946903d9d2826cafee4a0c4fbdbcc8998a5617aa6d0cbb41645aff"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 12, layers = 10 }
+equivalent_native_case = "simulator.state.sv_numba_12q_10l"
+
+[[fixture]]
+id = "simulate_layered_8q_4l_qasm2"
+path = "qasm2/simulate_layered_8q_4l.qasm"
+format = "openqasm2"
+profiles = ["quick", "full"]
+qubits = 8
+tags = ["simulate", "layered"]
+sha256 = "a5f7bbc71216dcef103819784de2e3eed6743a418618eb4dcce0cb57bc955668"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 8, layers = 4 }
+
+[[fixture]]
+id = "simulate_layered_8q_4l_qasm3"
+path = "qasm3/simulate_layered_8q_4l.qasm"
+format = "openqasm3"
+profiles = ["quick", "full"]
+qubits = 8
+tags = ["simulate", "layered"]
+sha256 = "cb54662cdba9c955a414784ccfea15c7e0716edc358198d836d8bd5cc58f15d3"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 8, layers = 4 }
+
+[[fixture]]
+id = "sc_grid_nonlocal_12q_8l_qasm2"
+path = "qasm2/sc_grid_nonlocal_12q_8l.qasm"
+format = "openqasm2"
+profiles = ["quick", "full"]
+qubits = 12
+tags = ["compile", "superconducting", "nonlocal"]
+sha256 = "d65c589654e734ee47575520099d45003f0a295654c1eeb7083bb417daf2deb1"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "sc_nonlocal_program"
+workload_parameters = { width = 12, layers = 8, seed = 23, logical = false }
+equivalent_native_case = "compiler.sc.grid_nonlocal_12q_8l"
+
+[[fixture]]
+id = "sc_grid_nonlocal_12q_8l_qasm3"
+path = "qasm3/sc_grid_nonlocal_12q_8l.qasm"
+format = "openqasm3"
+profiles = ["quick", "full"]
+qubits = 12
+tags = ["compile", "superconducting", "nonlocal"]
+sha256 = "324f8e5a57645441a02474a1196c80bd2e5be3d50d8172d319686cd8f055fe2d"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "sc_nonlocal_program"
+workload_parameters = { width = 12, layers = 8, seed = 23, logical = false }
+equivalent_native_case = "compiler.sc.grid_nonlocal_12q_8l"
+
+[[fixture]]
+id = "na_round_robin_20q_4l_qasm2"
+path = "qasm2/na_round_robin_20q_4l.qasm"
+format = "openqasm2"
+profiles = ["quick", "full"]
+qubits = 20
+tags = ["compile", "neutral-atom", "round-robin"]
+sha256 = "f76dcc9e5578c4f241d87474a4f987656298903e1616e93083726366f0abdb55"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "na_round_robin_program"
+workload_parameters = { width = 20, layers = 4 }
+equivalent_native_case = "compiler.na.round_robin_20q_4l"
+
+[[fixture]]
+id = "na_round_robin_20q_4l_qasm3"
+path = "qasm3/na_round_robin_20q_4l.qasm"
+format = "openqasm3"
+profiles = ["quick", "full"]
+qubits = 20
+tags = ["compile", "neutral-atom", "round-robin"]
+sha256 = "c5ff65b642718a751a2208cfceac2034faf3fb38a0dfb9227d366cae47e3ab4a"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "na_round_robin_program"
+workload_parameters = { width = 20, layers = 4 }
+equivalent_native_case = "compiler.na.round_robin_20q_4l"
+
+[[fixture]]
+id = "import_layered_32q_64l_qasm2"
+path = "qasm2/import_layered_32q_64l.qasm"
+format = "openqasm2"
+profiles = ["full"]
+qubits = 32
+tags = ["import", "layered", "scaling"]
+sha256 = "a271e2331cd3ebaad8a3f0ac83393c2e9b1a8f56d9054c54eb80ba5a0142420a"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 32, layers = 64 }
+
+[[fixture]]
+id = "import_layered_32q_64l_qasm3"
+path = "qasm3/import_layered_32q_64l.qasm"
+format = "openqasm3"
+profiles = ["full"]
+qubits = 32
+tags = ["import", "layered", "scaling"]
+sha256 = "3d83003af693c3059d4c52f66498619be4c5929d07736d84241abcf5b25a9c7d"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 32, layers = 64 }
+
+[[fixture]]
+id = "simulate_layered_12q_8l_qasm2"
+path = "qasm2/simulate_layered_12q_8l.qasm"
+format = "openqasm2"
+profiles = ["full"]
+qubits = 12
+tags = ["simulate", "layered", "scaling"]
+sha256 = "ecb013b52d78006dfcffcfb6117f20722cd016dd7e27bc20f405031a21eb89da"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 12, layers = 8 }
+
+[[fixture]]
+id = "simulate_layered_12q_8l_qasm3"
+path = "qasm3/simulate_layered_12q_8l.qasm"
+format = "openqasm3"
+profiles = ["full"]
+qubits = 12
+tags = ["simulate", "layered", "scaling"]
+sha256 = "dc216e1dbd6d5c6925dcfb629c6f3ab335f26f900478c96c7cdc61626602105d"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "layered_program"
+workload_parameters = { width = 12, layers = 8 }
+
+[[fixture]]
+id = "sc_grid_nonlocal_16q_24l_qasm2"
+path = "qasm2/sc_grid_nonlocal_16q_24l.qasm"
+format = "openqasm2"
+profiles = ["full"]
+qubits = 16
+tags = ["compile", "superconducting", "nonlocal", "scaling"]
+sha256 = "e63f4e991db18f74cec125de98002035168f15a007ee49f82d65435295d38ace"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "sc_nonlocal_program"
+workload_parameters = { width = 16, layers = 24, seed = 23, logical = false }
+equivalent_native_case = "compiler.sc.grid_nonlocal_16q_24l"
+
+[[fixture]]
+id = "sc_grid_nonlocal_16q_24l_qasm3"
+path = "qasm3/sc_grid_nonlocal_16q_24l.qasm"
+format = "openqasm3"
+profiles = ["full"]
+qubits = 16
+tags = ["compile", "superconducting", "nonlocal", "scaling"]
+sha256 = "8b4809d4035a61bf1377aed8f5146503f2ff01dd6cac5ea663aeaf7c785de1ae"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "sc_nonlocal_program"
+workload_parameters = { width = 16, layers = 24, seed = 23, logical = false }
+equivalent_native_case = "compiler.sc.grid_nonlocal_16q_24l"
+
+[[fixture]]
+id = "na_round_robin_50q_4l_qasm2"
+path = "qasm2/na_round_robin_50q_4l.qasm"
+format = "openqasm2"
+profiles = ["full"]
+qubits = 50
+tags = ["compile", "neutral-atom", "round-robin", "scaling"]
+sha256 = "8439f2a2b2cf9a74a2d9e573fb43cd64aa88ef2c1b330492d28c72a58690b990"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "na_round_robin_program"
+workload_parameters = { width = 50, layers = 4 }
+equivalent_native_case = "compiler.na.round_robin_50q_4l"
+
+[[fixture]]
+id = "na_round_robin_50q_4l_qasm3"
+path = "qasm3/na_round_robin_50q_4l.qasm"
+format = "openqasm3"
+profiles = ["full"]
+qubits = 50
+tags = ["compile", "neutral-atom", "round-robin", "scaling"]
+sha256 = "454c88d1eecbce978f0a2ffe930c606ba92654671e2dc0ba260aab517fceaa9e"
+origin = "fatqat-benchmark"
+license = "Apache-2.0"
+generated_by = "fatqat.qasm.to_qasm"
+exporter_fatqat_commit = "8452bc92091339734a7ee5b8c85d624f3c86a2f7"
+workload = "na_round_robin_program"
+workload_parameters = { width = 50, layers = 4 }
+equivalent_native_case = "compiler.na.round_robin_50q_4l"

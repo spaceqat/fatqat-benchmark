@@ -1,0 +1,11 @@
+[project]
+name = "fatqat-benchmark"
+version = "0.1.0"
+description = "Standalone performance benchmarks for FatQat"
+requires-python = ">=3.12"
+dependencies = []
+license = "Apache-2.0"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]

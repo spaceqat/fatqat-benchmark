@@ -1,0 +1,1 @@
+"""FatQat benchmark definitions."""
