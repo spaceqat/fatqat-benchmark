@@ -5,8 +5,11 @@ Standalone Python performance benchmarks for
 installation visible to the current Python interpreter. The main runners do not
 modify `sys.path`, create an environment, or run the FatQat correctness tests.
 
-The first benchmark set covers the generic simulator, parameter sweeps and
+The benchmark suite covers the generic simulator, parameter sweeps and
 estimators, superconducting compilation, and neutral-atom compilation.
+The [circuit catalog](docs/circuit-catalog.md) adds 29 scalable families,
+separate statevector/density-matrix/unitary/superoperator probes, dynamic and
+noisy sampling, and counts-only sampling from a fixed dense statevector.
 Correctness remains the responsibility of FatQat's existing test suite and
 should be run separately before accepting a performance result.
 
@@ -24,6 +27,8 @@ measured, then run either the full suite or one benchmark file:
 ```sh
 python runner.py --profile quick
 python benchmarks/bench_compile_sc.py --profile quick
+python benchmarks/bench_circuit_catalog.py --profile quick
+python benchmarks/bench_sampling.py --profile quick
 python runner.py --profile full
 python qasm_runner.py --profile quick
 python qasm_runner.py --profile full

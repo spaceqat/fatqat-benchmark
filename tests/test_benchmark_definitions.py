@@ -20,8 +20,8 @@ from benchmarks.bench_simulator_shots import CASES as SHOT_CASES
 
 class BenchmarkDefinitionTests(unittest.TestCase):
     def test_expected_profile_sizes(self):
-        self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 10)
-        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 28)
+        self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 45)
+        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 302)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "quick", False)), 8)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "full", False)), 16)
 
