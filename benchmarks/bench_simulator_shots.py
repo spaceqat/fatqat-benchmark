@@ -4,10 +4,10 @@ from __future__ import annotations
 
 try:
     from ._harness import BenchmarkCase, PreparedCase, main
-    from ._workloads import dynamic_program, measured_ghz_program
+    from ._workloads import dynamic_program
 except ImportError:  # direct execution
     from _harness import BenchmarkCase, PreparedCase, main
-    from _workloads import dynamic_program, measured_ghz_program
+    from _workloads import dynamic_program
 
 import fatqat as fq
 
@@ -32,7 +32,8 @@ def _dynamic_setup(width: int, rounds: int, shots: int) -> PreparedCase:
 
 
 def _parallel_setup(width: int, shots: int, strategy: str) -> PreparedCase:
-    program = measured_ghz_program(width)
+    # Terminal-only measurement uses one evolution, so cannot shard trajectories.
+    program = dynamic_program(width, 2)
     backend = fq.simulator.Simulator(method="statevector", runtime="numba")
     config = {
         "seed": 13,
@@ -71,13 +72,14 @@ CASES = (
     ),
     *tuple(
         BenchmarkCase(
-            name=f"terminal_numba_12q_4096s_{strategy}",
+            name=f"dynamic_numba_6q_2r_256s_{strategy}",
             group="simulator.parallel",
             profiles=frozenset({"full"}),
-            setup=lambda strategy=strategy: _parallel_setup(12, 4096, strategy),
+            setup=lambda strategy=strategy: _parallel_setup(6, 256, strategy),
             parameters={
-                "qubits": 12,
-                "shots": 4096,
+                "qubits": 6,
+                "rounds": 2,
+                "shots": 256,
                 "strategy": strategy,
                 "workers": _parallel_workers(strategy),
             },

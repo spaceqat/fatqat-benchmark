@@ -40,7 +40,7 @@ def dynamic_program(width: int, rounds: int) -> fq.Program:
 
 
 def measured_ghz_program(width: int) -> fq.Program:
-    """Build a terminal-measurement workload eligible for shot parallelism."""
+    """Build terminal GHZ sampling, which needs only one state evolution."""
 
     program = fq.Program(width, width)
     program.add(ops.H, 0)

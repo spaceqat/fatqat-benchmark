@@ -16,12 +16,29 @@ from benchmarks import _qasm_corpus
 from benchmarks._harness import _selected_cases
 from benchmarks._qasm_corpus import load_qasm_fixture, validate_fixture_metadata
 from benchmarks.bench_simulator_shots import CASES as SHOT_CASES
+from benchmarks.bench_simulator_state import _state_setup
 
 
 class BenchmarkDefinitionTests(unittest.TestCase):
+    def test_fusion_controls_are_explicit_and_other_cases_keep_default(self):
+        for fusion in (None, False, True):
+            with mock.patch(
+                "benchmarks.bench_simulator_state.fq.simulator.Simulator"
+            ) as simulator:
+                prepared = _state_setup("density_matrix", "numba", 2, 1, fusion=fusion)
+                prepared.run()
+                config = simulator.return_value.run.call_args.kwargs[
+                    "simulation_config"
+                ]
+                if fusion is None:
+                    self.assertNotIn("fusion", config)
+                else:
+                    self.assertIs(config["fusion"], fusion)
+
     def test_expected_profile_sizes(self):
         self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 45)
-        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 302)
+        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 322)
+        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 25)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "quick", False)), 8)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "full", False)), 16)
 

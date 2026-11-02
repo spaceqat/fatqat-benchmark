@@ -1,87 +1,80 @@
 # FatQat Benchmark
 
-Standalone Python performance benchmarks for
-[FatQat](https://github.com/spaceqat/fatqat). The suite measures the FatQat
-installation visible to the current Python interpreter. The main runners do not
-modify `sys.path`, create an environment, or run the FatQat correctness tests.
+Run selected [FatQat](https://github.com/spaceqat/fatqat) workloads or compare
+two local revisions for performance regressions. Requires Python 3.12+ and
+FatQat installed in the environment being measured.
 
-The benchmark suite covers the generic simulator, parameter sweeps and
-estimators, superconducting compilation, and neutral-atom compilation.
-The [circuit catalog](docs/circuit-catalog.md) adds 29 scalable families,
-separate statevector/density-matrix/unitary/superoperator probes, dynamic and
-noisy sampling, and counts-only sampling from a fixed dense statevector.
-Correctness remains the responsibility of FatQat's existing test suite and
-should be run separately before accepting a performance result.
+The suite covers simulation, parameter sweeps, estimators, SC/NA compilation
+and a separate OpenQASM track. Each run measures the FatQat installation
+available to its Python interpreter.
 
-An independent OpenQASM track measures import, import-plus-simulation, and
-QASM-to-SC/NA compilation. It uses committed QASM 2/3 fixtures materialized
-offline with FatQat's exporter. The QASM track remains separate so its text
-frontend does not change the established Python-native timing and memory
-baseline.
+## Choose a profile
 
-## Run
+| Profile | Use it for | Cases |
+| --- | --- | ---: |
+| `guard` | Local PR checks: sweeps, noise, threading and representative simulations | 25 |
+| `quick` | Small examples across the existing catalog; runner default | 45 |
+| `full` | All registered sizes and workloads | 322 |
 
-Activate an environment containing the FatQat checkout or wheel that should be
-measured, then run either the full suite or one benchmark file:
+Start with **`guard` when reviewing a performance-sensitive PR**. It focuses on
+representative execution paths and regression risks, including parameter batches,
+noise and parallel execution. This is the default for `compare.py`.
 
-```sh
-python runner.py --profile quick
-python benchmarks/bench_compile_sc.py --profile quick
-python benchmarks/bench_circuit_catalog.py --profile quick
-python benchmarks/bench_sampling.py --profile quick
-python runner.py --profile full
-python qasm_runner.py --profile quick
-python qasm_runner.py --profile full
-```
+Choose **`quick` for a broad first look** at the existing catalog, using smaller
+workloads to check that an environment works or explore which cases matter.
+It is the default for `runner.py`; it is not a smaller version of `guard`.
 
-Every executable benchmark file supports `--profile quick|full`, `--help`, and
-`--list`. Useful overrides include `--warmups`, `--repeats`, `--timeout`, and
-`--output`. Diagnostic microbenchmarks use FatQat private APIs, are marked
-unstable, and run only with `--include-micro`.
+Use **`full` for a broader investigation**, such as changes affecting many
+simulation or compiler paths. It includes larger workloads, so expect more time
+and memory use. Start with `--list` and filter to the relevant cases if needed.
+No profile guarantees coverage of every regression.
 
-The terminal receives a compact summary. Complete metadata, raw nanosecond
-samples, summary statistics, compiler diagnostics, failures, and timeouts are
-written to one JSON document under `results/` unless `--output` is supplied.
-`configuration.repeats` is the profile or command-line default;
-`configuration.case_repeat_overrides` records cases that use a smaller
-profile-specific count, and each result records its actual repeat count.
-
-## Measurement model
-
-- Workload construction is outside the primary timed operation and is reported
-  separately as `setup_ns`.
-- The first operation in a fresh worker process with an isolated Numba cache is
-  reported as `cold_ns`.
-- Warm measurements follow untimed warm-up calls and use the median as the
-  primary summary.
-- Each case runs in its own subprocess. A timeout is recorded without stopping
-  the remaining cases.
-- The primary baseline fixes simulator shot and kernel parallelism to serial.
-  Parallel scaling cases are separate.
-- Unix workers report process peak RSS with `resource.getrusage`; unsupported
-  platforms report `null`. Peak RSS is platform-specific and must not be
-  compared across operating systems.
-- Simulator, SC compiler, and NA compiler results remain separate. The runner
-  deliberately does not emit a single aggregate score.
-
-The suite requires Python 3.12 or newer and otherwise uses only the standard
-library plus FatQat and its installed dependencies.
-When the optional `git` executable is unavailable, Git commit and dirty-state
-metadata are reported as `null` rather than preventing benchmark output.
-
-## QASM corpus
-
-QASM files and their provenance live under `corpora/qasm/`. The TOML manifest
-records each stable fixture ID, format, profile, SHA-256 digest, originating
-workload, exporter, FatQat revision, license, and paired Python-native case.
-Manifest parsing, file reads, and digest verification happen during case setup,
-outside the primary timed operation. Benchmark runs never generate or download
-QASM input.
-
-## Validate the benchmark infrastructure
-
-Run the standard-library regression suite before accepting benchmark changes:
+Counts exclude optional private microbenchmarks. `quick` and `full` also include
+legacy compiler cases; see [compatibility notes](docs/running-benchmarks.md#compatibility).
 
 ```sh
-python -m unittest discover -s tests -v
+python runner.py --profile guard --list
+python runner.py --profile guard
+python runner.py --profile guard --case "*sweep*"
 ```
+
+## Standard options
+
+| Option | Meaning |
+| --- | --- |
+| `--profile guard\|quick\|full` | Choose the workload set above |
+| `--case "*sweep*"` | Run matching case IDs within that profile; repeat to include more |
+| `--exclude "*threads*"` | Remove matching case IDs |
+| `--list` | Preview the selection without running it |
+| `--output results/run.json` | Choose the result file; otherwise saved under `results/` |
+
+Patterns are case-sensitive; exclusions win. An empty selection fails.
+Use `--help` for timing controls and diagnostic options.
+
+## Compare a PR
+
+Install base and candidate FatQat in separate environments with matching Python
+and dependency versions. Substitute their Python executable paths below:
+
+```sh
+python compare.py --base-python BASE_PYTHON --candidate-python PR_PYTHON --output results/pr-check.json
+```
+
+To find each executable path, run `python -c "import sys; print(sys.executable)"`
+in that environment. Quote paths containing spaces.
+Comparison defaults to `guard` and accepts `--profile`, `--case` and `--exclude`.
+It writes JSON and HTML reports, using a 5% slowdown budget by default. Exit codes:
+**0** pass, **1** regression, **2** error, **3** inconclusive. Confirm flagged
+cases with a longer run; see [measurement and comparison details](docs/running-benchmarks.md).
+
+## How it fits together
+
+**Case files** build circuits and define the timed operation. The **harness**
+selects cases and measures them in subprocesses. **compare.py** runs the same
+selection sequentially against two environments. It does not install packages
+or switch Git checkouts. OpenQASM uses a separate `qasm_runner.py` because its
+timings include frontend work.
+
+See the [circuit catalog](docs/circuit-catalog.md) for workloads. Validate this
+repository with `python -m unittest discover -s tests -v`; run FatQat's own
+correctness tests separately before accepting performance results.

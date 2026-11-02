@@ -13,11 +13,11 @@ else:  # direct execution
 
 import numpy as np
 
-from fatqat._backends.steps import ApplyChannelStep
-from fatqat.simulator._engine.nb import NumbaDMEngine
-
 
 def _setup() -> PreparedCase:
+    from fatqat._backends.steps import ApplyChannelStep
+    from fatqat.simulator._engine.nb import NumbaDMEngine
+
     engine = NumbaDMEngine()
     engine.initialize((2,) * 8)
     probability = 0.02
