@@ -16,6 +16,7 @@ from benchmarks._harness import (
     _run_subprocess,
     _selected_cases,
     _worker_payload,
+    _run_worker,
 )
 
 
@@ -24,6 +25,48 @@ def _prepared_noop() -> PreparedCase:
 
 
 class HarnessTests(unittest.TestCase):
+    def test_includes_are_or_and_exclusions_win(self):
+        cases = tuple(
+            BenchmarkCase(
+                name=n, group="test", profiles=frozenset({"full"}), setup=_prepared_noop
+            )
+            for n in ("sweep1", "sweep8", "state")
+        )
+        self.assertEqual(
+            _selected_cases(cases, "full", False, ["*sweep*", "*state"], ["*8"]),
+            (cases[0], cases[2]),
+        )
+        self.assertEqual(_selected_cases(cases, "quick", False, ["*"]), ())
+        self.assertEqual(_selected_cases(cases, "full", False, ["typo"]), ())
+
+    def test_minimum_sample_time_records_calls_and_per_call_times(self):
+        ticks = iter(range(0, 100_000_000, 1_000_000))
+        case = BenchmarkCase("noop", "test", frozenset({"quick"}), _prepared_noop)
+        with mock.patch(
+            "benchmarks._harness.time.perf_counter_ns", side_effect=lambda: next(ticks)
+        ):
+            result = _run_worker(
+                case, profile="quick", warmups=0, repeats=2, min_sample_time=0.003
+            )
+        self.assertEqual(result["sample_calls"], [3, 3])
+        self.assertEqual(result["samples_ns"], [1_000_000, 1_000_000])
+
+    def test_nonzero_worker_exit_cannot_report_success(self):
+        case = BenchmarkCase("noop", "test", frozenset({"quick"}), _prepared_noop)
+        completed = subprocess.CompletedProcess(
+            [], 1, '__FATQAT_BENCHMARK_RESULT__={"status":"ok"}\n', ""
+        )
+        with mock.patch("benchmarks._harness.subprocess.run", return_value=completed):
+            result = _run_subprocess(
+                case,
+                entrypoint=Path("runner.py"),
+                profile="quick",
+                warmups=0,
+                repeats=1,
+                timeout=1,
+            )
+        self.assertEqual(result["status"], "error")
+
     def test_profile_and_unstable_selection(self):
         stable = BenchmarkCase(
             name="stable",

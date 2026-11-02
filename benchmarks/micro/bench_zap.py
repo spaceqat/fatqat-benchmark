@@ -13,10 +13,10 @@ else:  # direct execution
     from benchmarks._harness import BenchmarkCase, PreparedCase, main
     from benchmarks._workloads import round_robin_matchings
 
-from fatqat.compiler.algorithms.zap.scheduler import Scheduler
-
 
 def _setup() -> PreparedCase:
+    from fatqat.compiler.algorithms.zap.scheduler import Scheduler
+
     gates = [gate for layer in round_robin_matchings(50, 8) for gate in layer]
 
     def run():

@@ -1,6 +1,9 @@
 """Run the complete FatQat benchmark suite."""
 
+from dataclasses import replace
+
 from benchmarks._harness import main
+from benchmarks.bench_guard import CASES as GUARD_CASES
 from benchmarks.bench_circuit_catalog import CASES as CATALOG_CASES
 from benchmarks.bench_sampling import CASES as SAMPLING_CASES
 from benchmarks.bench_compile_na import CASES as COMPILE_NA_CASES
@@ -25,6 +28,24 @@ CASES = (
     *MICRO_DM_CASES,
     *MICRO_SABRE_CASES,
     *MICRO_ZAP_CASES,
+    *GUARD_CASES,
+)
+
+# Reuse representative cases instead of maintaining a second circuit catalog.
+_GUARD_EXISTING = {
+    "simulator.shots.dynamic_numba_6q_4r_256s",
+    "simulator.state.dm_numba_noisy_6q_8l",
+    "simulator.state.mixed_qudit_numba",
+    "simulator.catalog.method_unitary_numba_2q",
+    "simulator.sampling.fixed_state_statevector_numba_5q_65536s",
+}
+CASES = tuple(
+    (
+        replace(case, profiles=case.profiles | {"guard"})
+        if case.key in _GUARD_EXISTING
+        else case
+    )
+    for case in CASES
 )
 
 

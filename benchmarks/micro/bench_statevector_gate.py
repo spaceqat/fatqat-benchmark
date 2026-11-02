@@ -13,11 +13,11 @@ else:  # direct execution
 
 import numpy as np
 
-from fatqat._backends.steps import ApplyMatrixStep, BuiltinKernelKey
-from fatqat.simulator._engine.nb import NumbaSVEngine
-
 
 def _setup() -> PreparedCase:
+    from fatqat._backends.steps import ApplyMatrixStep, BuiltinKernelKey
+    from fatqat.simulator._engine.nb import NumbaSVEngine
+
     engine = NumbaSVEngine()
     engine.initialize((2,) * 16)
     matrix = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=np.complex128)
