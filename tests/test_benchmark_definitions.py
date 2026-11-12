@@ -37,8 +37,8 @@ class BenchmarkDefinitionTests(unittest.TestCase):
 
     def test_expected_profile_sizes(self):
         self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 45)
-        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 322)
-        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 38)
+        self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 327)
+        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 42)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "quick", False)), 8)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "full", False)), 16)
 

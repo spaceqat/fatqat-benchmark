@@ -101,6 +101,47 @@ python runner.py --profile guard --case "simulator.guard.sweep_8q_3l_5p_64rows"
 Definitions are in `benchmarks/bench_sweep_estimator.py` and
 `benchmarks/bench_guard.py`.
 
+## Expectation values
+
+Guard includes two existing estimator circuits and two fixed-state cases.
+All use Numba and serial execution.
+
+| Case ID suffix (`simulator.estimator.*`) | Workload | Profiles |
+| --- | --- | --- |
+| `exact_numba_8q_4terms` | 8 qubits, 4 layers; 4 separate Pauli observables | quick, full |
+| `exact_numba_12q_16terms` | 12 qubits, 8 layers; 16 separate Pauli observables | guard, full |
+| `sampled_numba_8q_4terms_256s` | 8 qubits, 4 layers; 4 observables, 256 shots per term | quick, guard, full |
+| `fixed_pauli_numba_16q_32terms` | Fixed 16-qubit state; one sum of 32 distinct Pauli terms | guard, full |
+| `fixed_mixed_local_numba_1t14q` | One qutrit plus 14 qubits; number operator on the qutrit times Z on one qubit | guard, full |
+| `fixed_projector_numba_8q_256terms` | 8 qubits; 256 ZERO/ONE term occurrences, eight distinct pairs repeated 32 times | full |
+| `fixed_mixed_global_numba_1t14q` | One qutrit plus 14 qubits; number operator times Z on every qubit | full |
+| `fixed_mixed_projector_numba_1t19q` | One qutrit plus 19 qubits; one projector product naming every subsystem | full |
+
+Fixed-state cases build a seeded complex state and observable during setup.
+Their timed `Estimator.run(...).result()` calls have no circuit gates but still
+include validation, state copying/layout conversion and result assembly.
+The three full-only cases retain the projector and mixed-dimension regressions
+investigated in FatQat PRs [#81](https://github.com/spaceqat/fatqat/pull/81) and
+[#89](https://github.com/spaceqat/fatqat/pull/89). These are targeted stress cases,
+not typical-workload claims. The largest input state occupies 24 MiB.
+
+For computation alone, `micro.expectation.*` reuses the fixed Pauli sum,
+projector sum and global mixed case. It prepares the native state layout once,
+then times exact evaluation including term conversion and any table building.
+These optional cases use private APIs; they exclude public request overhead
+and may need updating when FatQat internals change.
+
+```sh
+python runner.py --profile guard --case "simulator.estimator.*"
+python runner.py --profile full --case "simulator.estimator.*" --list
+python runner.py --profile full --include-micro --case "micro.expectation.*"
+```
+
+Definitions are in `bench_sweep_estimator.py`, `bench_expectation.py` and
+`micro/bench_expectation.py` under `benchmarks/`. No noisy or batched estimator
+requests, density-matrix expectations or pulse-emulator operator costs are
+covered yet.
+
 ## Additional sampling coverage
 
 `fixed_state` allocates a seeded normalized dense statevector during setup and
@@ -124,10 +165,10 @@ with channel noise. All counts cases set `final_state=False` explicitly.
 | `simulator.shots` | Measurement and conditional gates: 6 qubits / 256 shots and 8 qubits / 1,024 shots | `bench_simulator_shots.py` |
 | `simulator.parallel` | Same 6-qubit dynamic circuit with serial, thread and process shot execution | `bench_simulator_shots.py` |
 | `simulator.guard` (non-sweep) | 16-qubit shallow/deep circuits, auto threading, 20-qubit threaded execution; local CCX with eight workers is full-only | `bench_guard.py` |
-| `simulator.estimator` | Exact expectation values at 8/12 qubits and sampled estimates at 8 qubits / 256 shots | `bench_sweep_estimator.py` |
+| `simulator.estimator` | Exact/sampled circuits and fixed-state qubit/mixed-dimension expectations, detailed above | `bench_sweep_estimator.py`, `bench_expectation.py` |
 | `compiler.sc` | Local line and nonlocal grid routing at 12–32 qubits | `bench_compile_sc.py` |
 | `compiler.na` | Round-robin interactions on 20/50 atoms | `bench_compile_na.py` |
-| `micro.*` | Private gate, channel, SABRE routing and ZAP scheduling diagnostics; opt in with `--include-micro` | `micro/bench_*.py` |
+| `micro.*` | Private expectation, gate, channel, SABRE routing and ZAP scheduling timings; opt in with `--include-micro` | `micro/bench_*.py` |
 | `qasm.*` | QASM 2/3 import, import plus simulation, and SC/NA compilation; 16 cases, 8 in quick | `bench_qasm_*.py` |
 
 Definition paths are relative to `benchmarks/`. The Python SC/NA compiler cases

@@ -11,6 +11,8 @@ from benchmarks.bench_compile_sc import CASES as COMPILE_SC_CASES
 from benchmarks.bench_simulator_shots import CASES as SIMULATOR_SHOT_CASES
 from benchmarks.bench_simulator_state import CASES as SIMULATOR_STATE_CASES
 from benchmarks.bench_sweep_estimator import CASES as SWEEP_ESTIMATOR_CASES
+from benchmarks.bench_expectation import CASES as EXPECTATION_CASES
+from benchmarks.micro.bench_expectation import CASES as MICRO_EXPECTATION_CASES
 from benchmarks.micro.bench_density_channel import CASES as MICRO_DM_CASES
 from benchmarks.micro.bench_sabre import CASES as MICRO_SABRE_CASES
 from benchmarks.micro.bench_statevector_gate import CASES as MICRO_SV_CASES
@@ -22,12 +24,14 @@ _ALL_CASES = (
     *SIMULATOR_STATE_CASES,
     *SIMULATOR_SHOT_CASES,
     *SWEEP_ESTIMATOR_CASES,
+    *EXPECTATION_CASES,
     *COMPILE_SC_CASES,
     *COMPILE_NA_CASES,
     *MICRO_SV_CASES,
     *MICRO_DM_CASES,
     *MICRO_SABRE_CASES,
     *MICRO_ZAP_CASES,
+    *MICRO_EXPECTATION_CASES,
     *WORKFLOW_CASES,
 )
 
@@ -49,6 +53,8 @@ _GUARD_CASE_IDS = {
     "simulator.sampling.fixed_state_statevector_numba_12q_65536s",
     "simulator.sampling.terminal_noise_density_matrix_numba_8q_32s",
     "simulator.sampling.dynamic_noise_density_matrix_numba_5q_32s",
+    "simulator.estimator.exact_numba_12q_16terms",
+    "simulator.estimator.sampled_numba_8q_4terms_256s",
 } | {
     f"simulator.catalog.{family}_numba_{width}q"
     for family, widths in _GUARD_CATALOG_SIZES.items()

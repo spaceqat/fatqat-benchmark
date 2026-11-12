@@ -8,12 +8,12 @@ FatQat installed in each environment being measured.
 
 | Profile | When to use it | Cases |
 | --- | --- | ---: |
-| `guard` | Review a performance-sensitive PR. Small, medium and large circuits, all with Numba. Default for `compare.py`. | 38 |
+| `guard` | Review a performance-sensitive PR. Small, medium and large circuits, all with Numba. Default for `compare.py`. | 42 |
 | `quick` | Check an installation or try the catalog at smaller sizes. Default for `runner.py`. | 45 |
-| `full` | Investigate a wider change or a specific boundary case. Includes all sizes; filter it to limit time and memory. | 322 |
+| `full` | Investigate a wider change or a specific boundary case. Includes all sizes; filter it to limit time and memory. | 327 |
 
 Guard includes GHZ, QFT, QAOA and variational circuits, SV/DM/unitary/superoperator
-methods, sampling, noise, threading and 8/64/256-row parameter sweeps.
+methods, sampling, noise, threading, expectation values and 8/64/256-row parameter sweeps.
 Quick is a different selection, not a smaller guard. Full adds larger batches,
 custom parameter bindings and other targeted cases.
 See the [case catalog](docs/circuit-catalog.md) for sizes and exact selections.
