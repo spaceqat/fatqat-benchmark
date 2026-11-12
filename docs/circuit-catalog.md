@@ -1,7 +1,6 @@
 # Circuit catalog
 
-This page covers the main workload groups. For every exact case ID, including
-optional private microbenchmarks and the separate QASM track:
+List every exact case ID, including optional private microbenchmarks and QASM:
 
 ```sh
 python runner.py --profile full --include-micro --list
@@ -10,7 +9,7 @@ python qasm_runner.py --profile full --list
 
 The scalable circuit families below live in `benchmarks/bench_circuit_catalog.py`.
 
-## Coverage
+## Circuit families
 
 | Section | Families | Output |
 | --- | --- | --- |
@@ -22,18 +21,14 @@ The scalable circuit families below live in `benchmarks/bench_circuit_catalog.py
 | F | qutrit_ghz, qutrit_hea | Statevector |
 | G | small_unitary, small_superop (includes reset) | Full operator |
 | H | initial_state_shallow, initial_state_deep | Statevector from fixed dense input |
-| M | method_statevector, method_density_matrix, method_unitary, method_superop | Matching four-layer RY/RZ/CX probe in each representation |
+| M | method_statevector, method_density_matrix, method_unitary, method_superop | Same four-layer RY/RZ/CX circuit in each representation |
 
-The full profile covers the full size series: static circuits up to 24
+Full includes static circuits up to 24
 qubits, deep circuits up to 20, dynamic circuits up to 20 (odd repeater/code
 layouts up to 17), qutrit circuits up to 12, unitaries up to 8 and superoperators
 up to 5. Each point runs separately with NumPy and Numba. The quick profile
 selects the smallest size of every family with Numba. Larger representations
-can be expensive; each case retains the harness's independent timeout.
-
-The catalog follows this repository's Python-native benchmark scope: it compares
-no other simulators and requires no new runtime dependency. Existing QASM cases
-and their timing boundaries remain separate.
+can be expensive; each case has its own timeout.
 
 ## Catalog cases in guard
 
@@ -51,7 +46,7 @@ also changing the threading mode.
 | `real_amplitudes` | 5, 15, 20 | RY layers with a CX ladder |
 
 The variational layer count is `max(2, qubits // 4)`: 2, 3 and 5 layers at
-these sizes. Guard's separate state-evolution probes retain the 1/64-layer
+these sizes. Guard's separate state-evolution cases provide 1/64-layer
 coverage. Case IDs use `simulator.catalog.<family>_numba_<qubits>q`.
 
 Guard also reuses these eight Numba cases:
@@ -67,10 +62,10 @@ Guard also reuses these eight Numba cases:
 | `simulator.sampling.terminal_noise_density_matrix_numba_8q_32s` | Noisy DM evolution followed by terminal sampling |
 | `simulator.sampling.dynamic_noise_density_matrix_numba_5q_32s` | Noisy DM with intermediate measurement and reset |
 
-The 2-qubit unitary and 5-qubit fixed-state sampler remain in quick/full.
-Guard retains SV shot-thread and kernel-thread probes; process-shot and explicit
-fusion comparisons remain in full. Cases exercise public workflows, without
-asserting which internal Numba dispatch path a particular revision must choose.
+Guard also includes the eight sweeps below and four state-evolution cases:
+16 qubits at 1/64 layers with serial execution, 16 qubits at 64 layers with
+automatic threading, and 20 qubits at 3 layers with four kernel workers.
+Process-shot and explicit fusion comparisons are in full.
 
 ## Parameter sweeps
 
@@ -88,12 +83,13 @@ and simulation. Full has 17 sweep cases; guard selects eight of them.
 | `simulator.guard.sweep_*_8rows_2shots` | 8 qubits, 3 layers, 5 parameters; amplitude damping, phase damping or depolarizing noise | 8 / 2 | guard, full |
 | `simulator.guard.sweep_amplitude_*rows_2shots` | Same circuit with amplitude damping | 8, 64, 256 / 2 | full; 8 rows also in guard |
 | `simulator.guard.sweep_amplitude_*rows_128shots_threads2` | Same circuit; two shot workers | 8, 64 / 128 | full; 8 rows also in guard |
-| `simulator.guard.sweep_13q_1l_5p_2049rows_auto4` | 13 qubits, 1 layer, 5 parameters; batch-state boundary probe | 2,049 / 0 | full |
+| `simulator.guard.sweep_13q_1l_5p_2049rows_auto4` | 13 qubits, 1 layer, 5 parameters; crosses the reviewed 2,048-row state-buffer boundary | 2,049 / 0 | full |
 | `simulator.guard.sweep_structure_8q_64rows` | 8 qubits, one scalar parameter switching custom gates between diagonal, permutation and dense matrices on unordered targets | 64 / 0 | full |
 
 Patterns overlap for the 8-row amplitude-damping case. All these cases use
 Numba; zero shots requests final statevectors. Guard noise probabilities are
-0.03. The 2,049-row case returns about 256 MiB of states plus working memory.
+0.03. The 2,049-row case returns about 256 MiB of states plus working memory;
+internal chunking depends on the FatQat revision.
 
 List all sweep IDs, or run one example:
 
@@ -110,10 +106,8 @@ Definitions are in `benchmarks/bench_sweep_estimator.py` and
 `fixed_state` allocates a seeded normalized dense statevector during setup and
 reuses it with a measurement-only program. Widths are 5, 12 and 20 qubits, with
 1,024 and 65,536 shots per width and runtime. Both shot counts at 5 qubits with
-Numba are in quick. This isolates the public counts-request workflow from gate
-evolution; input validation/copying, sampling and result assembly still belong
-to the measured `Simulator.run(...).result()` call. It is not a private random
-number generator microbenchmark.
+Numba are in quick. The timed `Simulator.run(...).result()` call includes input
+validation, copying, sampling and result assembly, with no gate evolution.
 
 `terminal_noise` applies amplitude damping after RY gates in an SU2 ring.
 `dynamic_noise` adds depolarizing noise after CX gates to the mid-measure/reset
@@ -138,35 +132,15 @@ with channel noise. All counts cases set `final_state=False` explicitly.
 
 Definition paths are relative to `benchmarks/`. The Python SC/NA compiler cases
 require older APIs; see [compatibility notes](running-benchmarks.md#compatibility).
-QASM has quick/full profiles only. Guard reuses the 18 catalog cases above and
-eight state, shot, operator and sampling cases alongside 12 workflow probes.
-Eight additional probes remain full-only. Their `simulator.guard.*` IDs are kept
-stable for existing result files; the prefix does not determine their profile.
+QASM has quick/full profiles only. Some `simulator.guard.*` cases are full-only;
+the IDs stay unchanged for existing result files, but profiles control selection.
 
-## Measurement and validation
+## Seeds and timing
 
 Simulator programs, backends, noise models and dense inputs are constructed in
 `setup_ns`; timed simulator calls include execution and result retrieval.
 The scalable catalog and sampling cases use serial shot/kernel execution and
-seed 7. The probes in `bench_guard.py` use seed 17 and include threaded cases;
+seed 7. The cases in `bench_guard.py` use seed 17 and include threaded cases;
 cases reused by guard retain their original settings. Compiler, QASM and private
 microbenchmarks have their own timing boundaries.
-Counts diagnostics check the requested total after timing. State diagnostics
-record output shape and bytes. Infrastructure regression tests exercise all
-families at small widths, method agreement, GHZ/W support, fixed-state sampling
-probabilities, input reuse and noisy execution. They supplement, rather than
-replace, FatQat's correctness suite.
-
-```sh
-python benchmarks/bench_circuit_catalog.py --list
-python benchmarks/bench_circuit_catalog.py --profile quick
-python benchmarks/bench_sampling.py --profile quick
-python runner.py --profile full --list
-python -m unittest discover -s tests -v
-```
-
-The main suite has 45 quick cases and 322 full cases, excluding optional
-microbenchmarks. The catalog contributes 29 quick / 246 full cases and the
-additional sampling module contributes 6 quick / 28 full cases.
-The 38-case `guard` profile combines 12 focused workflow probes with 26 existing
-cases; it is a subset of full, not another circuit catalog.
+See the [running guide](running-benchmarks.md) for measurement details and checks.
