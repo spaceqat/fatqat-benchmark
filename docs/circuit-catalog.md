@@ -35,23 +35,43 @@ The catalog follows this repository's Python-native benchmark scope: it compares
 no other simulators and requires no new runtime dependency. Existing QASM cases
 and their timing boundaries remain separate.
 
+## Catalog cases in guard
+
+Guard reuses these existing circuits with Numba only. Each case requests 1,024
+terminal counts and uses serial execution, so sizes can be compared without
+also changing the threading mode.
+
+| Family | Qubits | Circuit |
+| --- | --- | --- |
+| `ghz_chain` | 5, 15, 24 | H followed by a CX chain |
+| `qft` | 5, 15, 24 | H, controlled phases and swap reversal |
+| `qaoa_maxcut` | 5, 15, 24 | Ring ZZ cost and RX mixer |
+| `efficient_su2_ring` | 5, 15, 20 | RY/RZ layers with a CX ring |
+| `vqe_brickwall` | 5, 15, 20 | RX/RY/RZ layers with CX brickwork |
+| `real_amplitudes` | 5, 15, 20 | RY layers with a CX ladder |
+
+The variational layer count is `max(2, qubits // 4)`: 2, 3 and 5 layers at
+these sizes. Guard's separate state-evolution probes retain the 1/64-layer
+coverage. Case IDs use `simulator.catalog.<family>_numba_<qubits>q`.
+
 ## Parameter sweeps
 
 Each row supplies a new parameter binding to the same circuit. The timed
 operation is the complete `run_sweep(...).result()` call, including binding
-and simulation. There are 17 sweep cases: two original cases and 15 in `guard`.
+and simulation. Full has 17 sweep cases; guard selects nine of them.
 
 | Case ID or pattern | Circuit and parameters | Batch rows / shots per row | Profiles |
 | --- | --- | --- | --- |
 | `simulator.sweep.numba_8q_4l_16rows` | 8 qubits, 4 layers, 8 parameters | 16 / 0 | quick, full |
 | `simulator.sweep.numba_10q_8l_64rows` | 10 qubits, 8 layers, 10 parameters | 64 / 0 | full |
 | `simulator.guard.sweep_8q_3l_5p_*rows` | 8 qubits, 3 layers, 5 shared parameters | 1, 8, 64, 256 / 0 | guard, full |
-| `simulator.guard.sweep_8q_16l_*p_64rows` | 8 qubits, 16 layers, 5 or 128 parameters; same gate count | 64 / 0 | guard, full |
+| `simulator.guard.sweep_8q_16l_5p_64rows` | 8 qubits, 16 layers, 5 parameters | 64 / 0 | guard, full |
+| `simulator.guard.sweep_8q_16l_128p_64rows` | Same gate count with 128 parameters | 64 / 0 | full |
 | `simulator.guard.sweep_*_8rows_2shots` | 8 qubits, 3 layers, 5 parameters; amplitude damping, phase damping or depolarizing noise | 8 / 2 | guard, full |
-| `simulator.guard.sweep_amplitude_*rows_2shots` | Same circuit with amplitude damping | 8, 64, 256 / 2 | guard, full |
-| `simulator.guard.sweep_amplitude_*rows_128shots_threads2` | Same circuit; two shot workers | 8, 64 / 128 | guard, full |
-| `simulator.guard.sweep_13q_1l_5p_2049rows_auto4` | 13 qubits, 1 layer, 5 parameters; batch-state boundary probe | 2,049 / 0 | guard, full |
-| `simulator.guard.sweep_structure_8q_64rows` | 8 qubits, one scalar parameter switching custom gates between diagonal, permutation and dense matrices on unordered targets | 64 / 0 | guard, full |
+| `simulator.guard.sweep_amplitude_*rows_2shots` | Same circuit with amplitude damping | 8, 64, 256 / 2 | full; 8 rows also in guard |
+| `simulator.guard.sweep_amplitude_*rows_128shots_threads2` | Same circuit; two shot workers | 8, 64 / 128 | full; 8 rows also in guard |
+| `simulator.guard.sweep_13q_1l_5p_2049rows_auto4` | 13 qubits, 1 layer, 5 parameters; batch-state boundary probe | 2,049 / 0 | full |
+| `simulator.guard.sweep_structure_8q_64rows` | 8 qubits, one scalar parameter switching custom gates between diagonal, permutation and dense matrices on unordered targets | 64 / 0 | full |
 
 Patterns overlap for the 8-row amplitude-damping case. All these cases use
 Numba; zero shots requests final statevectors. Guard noise probabilities are
@@ -91,7 +111,7 @@ with channel noise. All counts cases set `final_state=False` explicitly.
 | `simulator.state` | NumPy/Numba statevectors, noisy density matrices, explicit DM fusion off/on, unitary/superoperator output, mixed qubits/qutrits | `bench_simulator_state.py` |
 | `simulator.shots` | Measurement and conditional gates: 6 qubits / 256 shots and 8 qubits / 1,024 shots | `bench_simulator_shots.py` |
 | `simulator.parallel` | Same 6-qubit dynamic circuit with serial, thread and process shot execution | `bench_simulator_shots.py` |
-| `simulator.guard` (non-sweep) | 16-qubit shallow/deep circuits, auto threading, 20-qubit threaded execution and local CCX with eight workers | `bench_guard.py` |
+| `simulator.guard` (non-sweep) | 16-qubit shallow/deep circuits, auto threading, 20-qubit threaded execution; local CCX with eight workers is full-only | `bench_guard.py` |
 | `simulator.estimator` | Exact expectation values at 8/12 qubits and sampled estimates at 8 qubits / 256 shots | `bench_sweep_estimator.py` |
 | `compiler.sc` | Local line and nonlocal grid routing at 12–32 qubits | `bench_compile_sc.py` |
 | `compiler.na` | Round-robin interactions on 20/50 atoms | `bench_compile_na.py` |
@@ -100,8 +120,10 @@ with channel noise. All counts cases set `final_state=False` explicitly.
 
 Definition paths are relative to `benchmarks/`. The Python SC/NA compiler cases
 require older APIs; see [compatibility notes](running-benchmarks.md#compatibility).
-QASM has quick/full profiles only. Guard reuses five state, shot, catalog and
-sampling cases alongside its own definitions.
+QASM has quick/full profiles only. Guard reuses the 18 catalog cases above and
+five state, shot, operator and sampling cases alongside 13 workflow probes.
+Seven targeted probes remain full-only. Their `simulator.guard.*` IDs are kept
+stable for existing result files; the prefix does not determine their profile.
 
 ## Measurement and validation
 
@@ -128,5 +150,5 @@ python -m unittest discover -s tests -v
 The main suite has 45 quick cases and 322 full cases, excluding optional
 microbenchmarks. The catalog contributes 29 quick / 246 full cases and the
 additional sampling module contributes 6 quick / 28 full cases.
-The 25-case `guard` profile combines 20 focused workflow probes with five
-existing cases; it is a subset of full, not another circuit catalog.
+The 36-case `guard` profile combines 13 focused workflow probes with 23 existing
+cases; it is a subset of full, not another circuit catalog.

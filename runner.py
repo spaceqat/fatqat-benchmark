@@ -39,6 +39,20 @@ _GUARD_EXISTING = {
     "simulator.catalog.method_unitary_numba_2q",
     "simulator.sampling.fixed_state_statevector_numba_5q_65536s",
 }
+# Small, medium and large catalog workloads; reuse recipes and timing settings.
+_GUARD_CATALOG_SIZES = {
+    "ghz_chain": (5, 15, 24),
+    "qft": (5, 15, 24),
+    "qaoa_maxcut": (5, 15, 24),
+    "efficient_su2_ring": (5, 15, 20),
+    "vqe_brickwall": (5, 15, 20),
+    "real_amplitudes": (5, 15, 20),
+}
+_GUARD_EXISTING.update(
+    f"simulator.catalog.{family}_numba_{width}q"
+    for family, widths in _GUARD_CATALOG_SIZES.items()
+    for width in widths
+)
 CASES = tuple(
     (
         replace(case, profiles=case.profiles | {"guard"})

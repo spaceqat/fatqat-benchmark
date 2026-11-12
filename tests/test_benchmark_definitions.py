@@ -38,9 +38,40 @@ class BenchmarkDefinitionTests(unittest.TestCase):
     def test_expected_profile_sizes(self):
         self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 45)
         self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 322)
-        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 25)
+        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 36)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "quick", False)), 8)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "full", False)), 16)
+
+    def test_guard_reuses_numba_catalog_and_keeps_targeted_probes_in_full(self):
+        guard = {
+            case.key: case for case in _selected_cases(runner.CASES, "guard", False)
+        }
+        full = {case.key: case for case in _selected_cases(runner.CASES, "full", False)}
+        for family, sizes in (
+            ("ghz_chain", (5, 15, 24)),
+            ("qft", (5, 15, 24)),
+            ("qaoa_maxcut", (5, 15, 24)),
+            ("efficient_su2_ring", (5, 15, 20)),
+            ("vqe_brickwall", (5, 15, 20)),
+            ("real_amplitudes", (5, 15, 20)),
+        ):
+            for size in sizes:
+                key = f"simulator.catalog.{family}_numba_{size}q"
+                self.assertIn(key, guard)
+                self.assertIs(guard[key].setup, full[key].setup)
+                self.assertNotIn(f"simulator.catalog.{family}_numpy_{size}q", guard)
+        for name in (
+            "sweep_13q_1l_5p_2049rows_auto4",
+            "sweep_structure_8q_64rows",
+            "sweep_8q_16l_128p_64rows",
+            "sweep_amplitude_64rows_2shots",
+            "sweep_amplitude_256rows_2shots",
+            "sweep_amplitude_64rows_128shots_threads2",
+            "local_ccx_14q_64g_threads8",
+        ):
+            key = f"simulator.guard.{name}"
+            self.assertIn(key, full)
+            self.assertNotIn(key, guard)
 
     def test_parallel_worker_metadata_matches_strategy(self):
         cases = {

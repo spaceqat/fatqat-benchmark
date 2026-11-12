@@ -12,13 +12,15 @@ available to its Python interpreter.
 
 | Profile | Use it for | Cases |
 | --- | --- | ---: |
-| `guard` | Local PR checks: sweeps, noise, threading and representative simulations | 25 |
+| `guard` | Local PR checks: small/medium/large circuits, sweeps, noise and threading | 36 |
 | `quick` | Small examples across the existing catalog; runner default | 45 |
 | `full` | All registered sizes and workloads | 322 |
 
 Start with **`guard` when reviewing a performance-sensitive PR**. It focuses on
 representative execution paths and regression risks, including parameter batches,
-noise and parallel execution. This is the default for `compare.py`.
+noise and parallel execution. GHZ, QFT and QAOA run at 5/15/24 qubits; three
+variational families run at 5/15/20 qubits. All guard cases use Numba.
+This is the default for `compare.py`.
 
 Choose **`quick` for a broad first look** at the existing catalog, using smaller
 workloads to check that an environment works or explore which cases matter.
@@ -27,6 +29,7 @@ It is the default for `runner.py`; it is not a smaller version of `guard`.
 Use **`full` for a broader investigation**, such as changes affecting many
 simulation or compiler paths. It includes larger workloads, so expect more time
 and memory use. Start with `--list` and filter to the relevant cases if needed.
+Targeted boundary and regression probes live here rather than in `guard`.
 No profile guarantees coverage of every regression.
 
 Counts exclude optional private microbenchmarks. `quick` and `full` also include

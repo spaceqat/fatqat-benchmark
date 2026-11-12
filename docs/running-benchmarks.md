@@ -11,17 +11,22 @@ FatQat revisions. Python-native and QASM tracks keep their existing boundaries.
 There is no environment manager or automatic Git checkout switching.
 
 Use `quick` for the existing small catalog, `full` for all sizes, or `guard`
-for 25 representative simulator cases. Guard adds small/large parameter batches,
-shared/independent parameters, shallow/deep circuits, three noise channels and
-kernel/shot threading; it also reuses existing dynamic, DM, qudit, unitary and
-sampling cases. It avoids a Cartesian product of every option.
+for 36 representative simulator cases. Guard includes GHZ, QFT and QAOA at
+5/15/24 qubits, and efficient SU2, VQE brickwall and real-amplitude circuits at
+5/15/20 qubits, all with Numba. It also covers small/large parameter batches,
+shallow/deep circuits, three noise channels and kernel/shot threading, plus
+existing dynamic, DM, qudit, unitary and
+sampling cases. The largest states make guard slower than a small-circuit smoke
+test; use `--case` to narrow a local investigation.
 
-The sweep probes also include a 13-qubit, 2,049-row workload (crossing the
+Full-only probes include a 13-qubit, 2,049-row workload (crossing the
 reviewed 256 MiB batch-state limit at 2,048 rows), amplitude-damping batches
 of 64/256 rows with two shots and 64 rows with 128 shots, and a custom gate
 that switches between diagonal, permutation and dense matrices on unordered
-targets. These reuse the sweep runner; other noise channels retain their
-small-batch cases. The boundary workload returns about 256 MiB of states,
+targets. The 128-parameter sweep and local CCX/eight-worker regression are
+also full-only.
+Case IDs retain their original `simulator.guard.*` prefix; profile membership
+controls selection. The boundary workload returns about 256 MiB of states,
 with additional working memory; its internal chunking depends on the FatQat revision.
 
 ```sh

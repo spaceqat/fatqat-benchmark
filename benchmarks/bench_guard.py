@@ -1,4 +1,4 @@
-"""A compact set of public workflows for local performance regression checks."""
+"""Public guard workflows and full-only regression probes."""
 
 from __future__ import annotations
 
@@ -152,11 +152,11 @@ def prepare_state(
     )
 
 
-def _case(name, setup, **parameters):
+def _case(name, setup, *, guard=True, **parameters):
     return BenchmarkCase(
         name=name,
         group="simulator.guard",
-        profiles=frozenset({"guard", "full"}),
+        profiles=frozenset({"guard", "full"} if guard else {"full"}),
         setup=lambda: setup(**parameters),
         parameters={"runtime": "numba", "seed": 17, **parameters},
     )
@@ -177,6 +177,7 @@ CASES = (
         _case(
             f"sweep_8q_16l_{count}p_64rows",
             prepare_sweep,
+            guard=count == 5,
             rows=64,
             layers=16,
             parameters=count,
@@ -200,6 +201,7 @@ CASES = (
     _case(
         "sweep_13q_1l_5p_2049rows_auto4",
         prepare_sweep,
+        guard=False,
         width=13,
         layers=1,
         rows=2049,
@@ -211,6 +213,7 @@ CASES = (
         _case(
             f"sweep_amplitude_{rows}rows_2shots",
             prepare_sweep,
+            guard=False,
             noise="amplitude",
             shots=2,
             rows=rows,
@@ -220,6 +223,7 @@ CASES = (
     _case(
         "sweep_amplitude_64rows_128shots_threads2",
         prepare_sweep,
+        guard=False,
         noise="amplitude",
         shots=128,
         rows=64,
@@ -228,6 +232,7 @@ CASES = (
     _case(
         "sweep_structure_8q_64rows",
         prepare_sweep,
+        guard=False,
         width=8,
         rows=64,
         structure_changing=True,
@@ -255,6 +260,7 @@ CASES = (
     _case(
         "local_ccx_14q_64g_threads8",
         prepare_state,
+        guard=False,
         width=14,
         layers=64,
         mode="threads",
