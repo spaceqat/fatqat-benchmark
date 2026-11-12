@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import fnmatch
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -58,13 +60,38 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run standalone FatQat performance benchmarks."
     )
-    parser.add_argument("--profile", choices=("quick", "full"), default="quick")
+    parser.add_argument(
+        "--profile", choices=("quick", "full", "guard"), default="quick"
+    )
+    parser.add_argument(
+        "--case",
+        action="append",
+        default=[],
+        help="Include case-name glob (repeatable).",
+    )
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Exclude case-name glob (repeatable).",
+    )
     parser.add_argument("--warmups", type=int)
     parser.add_argument("--repeats", type=int)
     parser.add_argument("--timeout", type=float)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--include-micro", action="store_true")
     parser.add_argument("--list", action="store_true")
+    parser.add_argument(
+        "--describe",
+        action="store_true",
+        help="Print selected cases and environment as JSON without running them.",
+    )
+    parser.add_argument(
+        "--min-sample-time",
+        type=float,
+        default=0.0,
+        help="Batch complete calls to at least this many seconds per warm sample (default: one call).",
+    )
     parser.add_argument("--_worker-case", help=argparse.SUPPRESS)
     return parser
 
@@ -82,13 +109,23 @@ def _defaults(profile: str) -> tuple[int, int, float]:
 
 
 def _selected_cases(
-    cases: Iterable[BenchmarkCase], profile: str, include_micro: bool
+    cases: Iterable[BenchmarkCase],
+    profile: str,
+    include_micro: bool,
+    include: Iterable[str] = (),
+    exclude: Iterable[str] = (),
 ) -> tuple[BenchmarkCase, ...]:
     selected = []
     for case in cases:
         if profile not in case.profiles:
             continue
         if case.unstable and not include_micro:
+            continue
+        if include and not any(
+            fnmatch.fnmatchcase(case.key, pattern) for pattern in include
+        ):
+            continue
+        if any(fnmatch.fnmatchcase(case.key, pattern) for pattern in exclude):
             continue
         selected.append(case)
     keys = [case.key for case in selected]
@@ -148,6 +185,11 @@ def environment_metadata() -> dict[str, Any]:
     import fatqat
 
     module_path = Path(fatqat.__file__).resolve()
+    source_hash = hashlib.sha256()
+    for path in sorted(module_path.parent.rglob("*.py")):
+        source_hash.update(path.relative_to(module_path.parent).as_posix().encode())
+        source_hash.update(b"\0")
+        source_hash.update(path.read_bytes())
     return {
         "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "python": platform.python_version(),
@@ -160,10 +202,47 @@ def environment_metadata() -> dict[str, Any]:
         "fatqat_version": _package_version("fatqat"),
         "fatqat_module": str(module_path),
         "fatqat_git": _git_metadata(module_path),
+        "fatqat_source_digest": source_hash.hexdigest(),
         "benchmark_git": _git_metadata(Path(__file__).resolve()),
         "numpy_version": _package_version("numpy"),
         "numba_version": _package_version("numba"),
+        "dependencies": {
+            name: _package_version(name)
+            for name in (
+                "numpy",
+                "numba",
+                "llvmlite",
+                "scipy",
+                "qutip",
+                "qutip-qip",
+                "loky",
+            )
+        },
+        "thread_environment": {
+            name: os.environ.get(name)
+            for name in (
+                "OMP_NUM_THREADS",
+                "OPENBLAS_NUM_THREADS",
+                "MKL_NUM_THREADS",
+                "NUMBA_NUM_THREADS",
+            )
+        },
+        "benchmark_digest": benchmark_digest(),
     }
+
+
+def benchmark_digest() -> str:
+    """Fingerprint benchmark code, including uncommitted local edits."""
+    digest = hashlib.sha256()
+    paths = [
+        *_REPOSITORY_ROOT.glob("*.py"),
+        *(_REPOSITORY_ROOT / "benchmarks").rglob("*.py"),
+    ]
+    for path in sorted(paths):
+        digest.update(path.relative_to(_REPOSITORY_ROOT).as_posix().encode())
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _measure(call: Callable[[], object]) -> tuple[int, object]:
@@ -173,7 +252,12 @@ def _measure(call: Callable[[], object]) -> tuple[int, object]:
 
 
 def _run_worker(
-    case: BenchmarkCase, *, profile: str, warmups: int, repeats: int
+    case: BenchmarkCase,
+    *,
+    profile: str,
+    warmups: int,
+    repeats: int,
+    min_sample_time: float = 0.0,
 ) -> dict[str, Any]:
     setup_start = time.perf_counter_ns()
     prepared = case.setup()
@@ -184,9 +268,24 @@ def _run_worker(
         last_result = prepared.run()
 
     samples = []
+    sample_calls = []
     for _ in range(repeats):
-        sample, last_result = _measure(prepared.run)
-        samples.append(sample)
+        if min_sample_time == 0:
+            # Preserve the existing one-call timing boundary for ordinary runs.
+            sample, last_result = _measure(prepared.run)
+            samples.append(sample)
+            sample_calls.append(1)
+            continue
+        start = time.perf_counter_ns()
+        calls = 0
+        while True:
+            last_result = prepared.run()
+            calls += 1
+            elapsed = time.perf_counter_ns() - start
+            if elapsed >= min_sample_time * 1e9:
+                break
+        samples.append(elapsed / calls)
+        sample_calls.append(calls)
 
     diagnostics = (
         dict(prepared.diagnostics(last_result))
@@ -213,6 +312,7 @@ def _run_worker(
         "warmups": warmups,
         "repeats": repeats,
         "samples_ns": samples,
+        "sample_calls": sample_calls,
         "summary": summary,
         "diagnostics": diagnostics,
         "process_peak_rss_bytes": _peak_rss_bytes(),
@@ -235,6 +335,7 @@ def _worker_payload(
             profile=args.profile,
             warmups=args.warmups,
             repeats=args.repeats,
+            min_sample_time=getattr(args, "min_sample_time", 0.0),
         )
     except Exception as exc:  # benchmark failures must be structured
         return {
@@ -304,9 +405,12 @@ def _run_subprocess(
     warmups: int,
     repeats: int,
     timeout: float,
+    python: str | None = None,
+    min_sample_time: float = 0.0,
+    cache_dir: str | None = None,
 ) -> dict[str, Any]:
     command = [
-        sys.executable,
+        python or sys.executable,
         str(entrypoint),
         "--_worker-case",
         case.key,
@@ -316,10 +420,12 @@ def _run_subprocess(
         str(warmups),
         "--repeats",
         str(repeats),
+        "--min-sample-time",
+        str(min_sample_time),
     ]
     environment = os.environ.copy()
-    with tempfile.TemporaryDirectory(prefix="fatqat-benchmark-numba-") as cache_dir:
-        environment["NUMBA_CACHE_DIR"] = cache_dir
+    with tempfile.TemporaryDirectory(prefix="fatqat-benchmark-numba-") as fresh_cache:
+        environment["NUMBA_CACHE_DIR"] = cache_dir or fresh_cache
         try:
             completed = subprocess.run(
                 command,
@@ -341,6 +447,12 @@ def _run_subprocess(
                 "stdout": _subprocess_output_text(exc.stdout),
                 "stderr": _subprocess_output_text(exc.stderr),
             }
+        except OSError as exc:
+            return {
+                "case": case.key,
+                "status": "error",
+                "error": {"type": type(exc).__name__, "message": str(exc)},
+            }
     try:
         payload = _extract_worker_result(completed.stdout)
     except (ValueError, json.JSONDecodeError) as exc:
@@ -358,6 +470,8 @@ def _run_subprocess(
     if completed.stderr:
         payload["worker_stderr"] = completed.stderr
     payload["returncode"] = completed.returncode
+    if completed.returncode != 0:
+        payload["status"] = "error"
     return payload
 
 
@@ -396,17 +510,41 @@ def main(cases: Iterable[BenchmarkCase], *, suite_name: str) -> int:
     timeout = default_timeout if args.timeout is None else args.timeout
     if not math.isfinite(timeout) or timeout <= 0:
         raise SystemExit("timeout must be a positive finite number")
+    if not math.isfinite(args.min_sample_time) or args.min_sample_time < 0:
+        raise SystemExit("min-sample-time must be finite and non-negative")
 
     if args._worker_case:
         payload = _worker_payload(all_cases, args._worker_case, args)
         print(_RESULT_PREFIX + json.dumps(payload, sort_keys=True))
         return 0 if payload["status"] == "ok" else 1
 
-    selected = _selected_cases(all_cases, args.profile, args.include_micro)
+    selected = _selected_cases(
+        all_cases, args.profile, args.include_micro, args.case, args.exclude
+    )
+    if not selected:
+        raise SystemExit("No benchmark cases match the selection")
     if args.list:
         for case in selected:
             unstable = " [unstable]" if case.unstable else ""
             print(f"{case.key}{unstable}")
+        return 0
+    if args.describe:
+        print(
+            json.dumps(
+                {
+                    "environment": environment_metadata(),
+                    "cases": [
+                        {
+                            "case": case.key,
+                            "parameters": dict(case.parameters),
+                            "unstable": case.unstable,
+                        }
+                        for case in selected
+                    ],
+                },
+                sort_keys=True,
+            )
+        )
         return 0
 
     results = []
@@ -426,6 +564,7 @@ def main(cases: Iterable[BenchmarkCase], *, suite_name: str) -> int:
                 warmups=args.warmups,
                 repeats=repeats,
                 timeout=timeout,
+                min_sample_time=args.min_sample_time,
             )
         )
 
@@ -445,6 +584,9 @@ def main(cases: Iterable[BenchmarkCase], *, suite_name: str) -> int:
             ),
             "timeout_seconds": timeout,
             "include_micro": args.include_micro,
+            "include": args.case,
+            "exclude": args.exclude,
+            "min_sample_time": args.min_sample_time,
             "numba_cache": "isolated_per_case",
         },
         "results": results,

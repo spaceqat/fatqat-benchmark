@@ -1,0 +1,2 @@
+# Fixture hashes describe the committed LF bytes, including on Windows.
+corpora/qasm/**/*.qasm text eol=lf

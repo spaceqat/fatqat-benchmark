@@ -27,7 +27,7 @@ def _state_setup(
     layers: int,
     *,
     noisy: bool = False,
-    fusion: bool = False,
+    fusion: bool | None = None,
 ) -> PreparedCase:
     program = layered_program(width, layers)
     noise = None
@@ -37,8 +37,8 @@ def _state_setup(
         noise.add(fq.noise.Depolarizing(p=0.01), operation=ops.CZ)
     backend = fq.simulator.Simulator(method=method, runtime=runtime, noise=noise)
     simulation_config = dict(SERIAL)
-    if fusion:
-        simulation_config["fusion"] = True
+    if fusion is not None:
+        simulation_config["fusion"] = fusion
 
     def run():
         return backend.run(
@@ -111,6 +111,7 @@ CASES = (
         "numba",
         9,
         20,
+        fusion=False,
     ),
     _case(
         "dm_numba_fusion_on_9q_20l",

@@ -13,11 +13,11 @@ else:  # direct execution
     from benchmarks._harness import BenchmarkCase, PreparedCase, main
     from benchmarks._workloads import grid_couplings, sc_nonlocal_program
 
-from fatqat.compiler.algorithms import sabre_map
-from fatqat.compiler.passes import normalize_sc_program, snapshot_program
-
 
 def _setup() -> PreparedCase:
+    from fatqat.compiler.algorithms import sabre_map
+    from fatqat.compiler.passes import normalize_sc_program, snapshot_program
+
     source = sc_nonlocal_program(16, 12, seed=29, logical=False)
     program = normalize_sc_program(snapshot_program(source))
     sites = tuple(range(16))
