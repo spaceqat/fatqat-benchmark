@@ -38,7 +38,7 @@ class BenchmarkDefinitionTests(unittest.TestCase):
     def test_expected_profile_sizes(self):
         self.assertEqual(len(_selected_cases(runner.CASES, "quick", False)), 45)
         self.assertEqual(len(_selected_cases(runner.CASES, "full", False)), 322)
-        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 36)
+        self.assertEqual(len(_selected_cases(runner.CASES, "guard", False)), 38)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "quick", False)), 8)
         self.assertEqual(len(_selected_cases(qasm_runner.CASES, "full", False)), 16)
 
@@ -61,6 +61,7 @@ class BenchmarkDefinitionTests(unittest.TestCase):
                 self.assertIs(guard[key].setup, full[key].setup)
                 self.assertNotIn(f"simulator.catalog.{family}_numpy_{size}q", guard)
         for name in (
+            "sweep_8q_3l_5p_1rows",
             "sweep_13q_1l_5p_2049rows_auto4",
             "sweep_structure_8q_64rows",
             "sweep_8q_16l_128p_64rows",
@@ -72,6 +73,35 @@ class BenchmarkDefinitionTests(unittest.TestCase):
             key = f"simulator.guard.{name}"
             self.assertIn(key, full)
             self.assertNotIn(key, guard)
+
+    def test_guard_covers_all_matrix_methods_and_sampling_workflows(self):
+        guard = {
+            case.key: case for case in _selected_cases(runner.CASES, "guard", False)
+        }
+        full = {case.key: case for case in _selected_cases(runner.CASES, "full", False)}
+        for key in (
+            "simulator.catalog.method_unitary_numba_8q",
+            "simulator.catalog.small_superop_numba_4q",
+            "simulator.sampling.fixed_state_statevector_numba_12q_65536s",
+            "simulator.sampling.terminal_noise_density_matrix_numba_8q_32s",
+            "simulator.sampling.dynamic_noise_density_matrix_numba_5q_32s",
+            "simulator.state.dm_numba_noisy_6q_8l",
+            "simulator.shots.dynamic_numba_6q_4r_256s",
+            "simulator.guard.sweep_amplitude_8rows_128shots_threads2",
+            "simulator.guard.sweep_8q_3l_5p_256rows",
+        ):
+            self.assertIn(key, guard)
+            self.assertIs(guard[key].setup, full[key].setup)
+        self.assertEqual(
+            {case.parameters.get("method") for case in guard.values()} - {None},
+            {"statevector", "density_matrix", "unitary", "superop"},
+        )
+        for key in (
+            "simulator.catalog.method_unitary_numba_2q",
+            "simulator.sampling.fixed_state_statevector_numba_5q_65536s",
+        ):
+            self.assertNotIn(key, guard)
+            self.assertIn(key, full)
 
     def test_parallel_worker_metadata_matches_strategy(self):
         cases = {

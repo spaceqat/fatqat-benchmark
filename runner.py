@@ -36,8 +36,11 @@ _GUARD_EXISTING = {
     "simulator.shots.dynamic_numba_6q_4r_256s",
     "simulator.state.dm_numba_noisy_6q_8l",
     "simulator.state.mixed_qudit_numba",
-    "simulator.catalog.method_unitary_numba_2q",
-    "simulator.sampling.fixed_state_statevector_numba_5q_65536s",
+    "simulator.catalog.method_unitary_numba_8q",
+    "simulator.catalog.small_superop_numba_4q",
+    "simulator.sampling.fixed_state_statevector_numba_12q_65536s",
+    "simulator.sampling.terminal_noise_density_matrix_numba_8q_32s",
+    "simulator.sampling.dynamic_noise_density_matrix_numba_5q_32s",
 }
 # Small, medium and large catalog workloads; reuse recipes and timing settings.
 _GUARD_CATALOG_SIZES = {

@@ -54,17 +54,35 @@ The variational layer count is `max(2, qubits // 4)`: 2, 3 and 5 layers at
 these sizes. Guard's separate state-evolution probes retain the 1/64-layer
 coverage. Case IDs use `simulator.catalog.<family>_numba_<qubits>q`.
 
+Guard also reuses these eight Numba cases:
+
+| Case ID | Purpose |
+| --- | --- |
+| `simulator.shots.dynamic_numba_6q_4r_256s` | SV measurement, reset and conditional gates |
+| `simulator.state.dm_numba_noisy_6q_8l` | Noisy DM evolution with final-state output |
+| `simulator.state.mixed_qudit_numba` | Mixed qubit/qutrit state evolution |
+| `simulator.catalog.method_unitary_numba_8q` | 8-qubit unitary construction |
+| `simulator.catalog.small_superop_numba_4q` | 4-qubit superoperator with reset |
+| `simulator.sampling.fixed_state_statevector_numba_12q_65536s` | 65,536 samples from a fixed dense SV |
+| `simulator.sampling.terminal_noise_density_matrix_numba_8q_32s` | Noisy DM evolution followed by terminal sampling |
+| `simulator.sampling.dynamic_noise_density_matrix_numba_5q_32s` | Noisy DM with intermediate measurement and reset |
+
+The 2-qubit unitary and 5-qubit fixed-state sampler remain in quick/full.
+Guard retains SV shot-thread and kernel-thread probes; process-shot and explicit
+fusion comparisons remain in full. Cases exercise public workflows, without
+asserting which internal Numba dispatch path a particular revision must choose.
+
 ## Parameter sweeps
 
 Each row supplies a new parameter binding to the same circuit. The timed
 operation is the complete `run_sweep(...).result()` call, including binding
-and simulation. Full has 17 sweep cases; guard selects nine of them.
+and simulation. Full has 17 sweep cases; guard selects eight of them.
 
 | Case ID or pattern | Circuit and parameters | Batch rows / shots per row | Profiles |
 | --- | --- | --- | --- |
 | `simulator.sweep.numba_8q_4l_16rows` | 8 qubits, 4 layers, 8 parameters | 16 / 0 | quick, full |
 | `simulator.sweep.numba_10q_8l_64rows` | 10 qubits, 8 layers, 10 parameters | 64 / 0 | full |
-| `simulator.guard.sweep_8q_3l_5p_*rows` | 8 qubits, 3 layers, 5 shared parameters | 1, 8, 64, 256 / 0 | guard, full |
+| `simulator.guard.sweep_8q_3l_5p_*rows` | 8 qubits, 3 layers, 5 shared parameters | 1, 8, 64, 256 / 0 | full; 8/64/256 rows also in guard |
 | `simulator.guard.sweep_8q_16l_5p_64rows` | 8 qubits, 16 layers, 5 parameters | 64 / 0 | guard, full |
 | `simulator.guard.sweep_8q_16l_128p_64rows` | Same gate count with 128 parameters | 64 / 0 | full |
 | `simulator.guard.sweep_*_8rows_2shots` | 8 qubits, 3 layers, 5 parameters; amplitude damping, phase damping or depolarizing noise | 8 / 2 | guard, full |
@@ -121,8 +139,8 @@ with channel noise. All counts cases set `final_state=False` explicitly.
 Definition paths are relative to `benchmarks/`. The Python SC/NA compiler cases
 require older APIs; see [compatibility notes](running-benchmarks.md#compatibility).
 QASM has quick/full profiles only. Guard reuses the 18 catalog cases above and
-five state, shot, operator and sampling cases alongside 13 workflow probes.
-Seven targeted probes remain full-only. Their `simulator.guard.*` IDs are kept
+eight state, shot, operator and sampling cases alongside 12 workflow probes.
+Eight additional probes remain full-only. Their `simulator.guard.*` IDs are kept
 stable for existing result files; the prefix does not determine their profile.
 
 ## Measurement and validation
@@ -150,5 +168,5 @@ python -m unittest discover -s tests -v
 The main suite has 45 quick cases and 322 full cases, excluding optional
 microbenchmarks. The catalog contributes 29 quick / 246 full cases and the
 additional sampling module contributes 6 quick / 28 full cases.
-The 36-case `guard` profile combines 13 focused workflow probes with 23 existing
+The 38-case `guard` profile combines 12 focused workflow probes with 26 existing
 cases; it is a subset of full, not another circuit catalog.

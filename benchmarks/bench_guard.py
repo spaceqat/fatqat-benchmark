@@ -167,6 +167,7 @@ CASES = (
         _case(
             f"sweep_8q_3l_5p_{rows}rows",
             prepare_sweep,
+            guard=rows != 1,
             rows=rows,
             layers=3,
             parameters=5,
